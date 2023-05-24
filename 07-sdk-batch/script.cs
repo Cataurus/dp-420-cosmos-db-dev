@@ -10,9 +10,9 @@ Database database = await client.CreateDatabaseIfNotExistsAsync("cosmicworks");
 
 Container container = await database.CreateContainerIfNotExistsAsync("products", "/categoryId", 400);
 
-/* Step 1
+// Step 1
 
-Product saddle = new("0120", "Worn Saddle", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
+/*Product saddle = new("0120", "Worn Saddle", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
 Product handlebar = new("012A", "Rusty Handlebar", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
 
 PartitionKey partitionKey = new ("9603ca6c-9e28-4a02-9194-51cdb7fea816");
@@ -24,11 +24,11 @@ TransactionalBatch batch = container.CreateTransactionalBatch(partitionKey)
 using TransactionalBatchResponse response = await batch.ExecuteAsync();
 
 Console.WriteLine($"Status:\t{response.StatusCode}");
-
 */
 
 // Step 2
 
+/*
 Product light = new("012B", "Flickering Strobe Light", "9603ca6c-9e28-4a02-9194-51cdb7fea816");
 Product helmet = new("012C", "New Helmet", "0feee2e4-687a-4d69-b64e-be36afc33e74");
 
@@ -41,3 +41,28 @@ TransactionalBatch batch = container.CreateTransactionalBatch(partitionKey)
 using TransactionalBatchResponse response = await batch.ExecuteAsync();
 
 Console.WriteLine($"Status:\t{response.StatusCode}");
+*/
+
+// Step 3
+
+PartitionKey partitionKey = new ("0feee2e4-687a-4d69-b64e-be36afc33e74");
+
+Product helmet = new("012C", "New Helmet", partitionKey.ToString());
+
+TransactionalBatch batch = container.CreateTransactionalBatch(partitionKey)
+    .CreateItem<Product>(helmet);
+
+using TransactionalBatchResponse response = await batch.ExecuteAsync();
+
+Console.WriteLine($"Create Helmet Status:\t{response.StatusCode}");
+
+var helmetResponse = await container.ReadItemAsync<Product>(helmet.id, partitionKey);
+
+Console.WriteLine($"Get Helmet Status:\t{helmetResponse.StatusCode}");
+
+helmet = new("012C", "New Helmet XL", partitionKey.ToString());;
+
+TransactionalBatch batch2 = container.CreateTransactionalBatch(partitionKey)
+    .UpsertItem<Product>(helmet, new TransactionalBatchItemRequestOptions(){IfMatchEtag = helmetResponse.ETag});
+
+Console.WriteLine($"Update Helmet Status:\t{helmetResponse.StatusCode}");
